@@ -78,37 +78,6 @@ Destroy when finished:
 terraform destroy
 ```
 
-## Old Local State
-
-This repo previously managed a local Kind/Kubernetes demo. If your local
-`terraform.tfstate` still contains those resources, Terraform may ask for the
-old Kubernetes provider when planning or applying.
-
-The cleanest path is to start this AWS example from fresh state. For this
-workspace, move the old local state aside before planning the AWS stack:
-
-```bash
-mv terraform.tfstate terraform.tfstate.kind-backup
-mv terraform.tfstate.backup terraform.tfstate.kind-backup.previous
-terraform init
-terraform plan
-```
-
-If you prefer to surgically keep the state file, remove the old entries before
-planning:
-
-```bash
-terraform state list
-terraform state rm 'kubernetes_deployment_v1.hello_worker'
-terraform state rm 'kubernetes_namespace_v1.demo'
-terraform state rm 'terraform_data.kind_cluster'
-terraform state rm 'local_file.kind_config'
-```
-
-If the old resources still exist and you want Terraform to destroy them, restore
-the old configuration first, run `terraform destroy`, and then use this AWS
-configuration.
-
 ## GitHub Actions Deploy
 
 The workflow in `.github/workflows/terraform.yml` uses GitHub OIDC to assume an
