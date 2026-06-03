@@ -1,0 +1,30 @@
+aws_region = "us-east-1"
+
+project_name = "platform"
+environment  = "prod"
+
+vpc_cidr           = "10.40.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+az_count           = 3
+
+enable_nat_gateway   = true
+single_nat_gateway   = false
+enable_vpc_flow_logs = true
+enable_vpc_endpoints = true
+
+kubernetes_version = "1.30"
+
+cluster_endpoint_private_access       = true
+cluster_endpoint_public_access        = true
+cluster_endpoint_public_access_cidrs  = ["0.0.0.0/0"]
+
+enable_managed_node_group = true
+node_instance_types       = ["t3.medium"]
+node_min_size             = 2
+node_desired_size         = 2
+node_max_size             = 6
+
+tags = {
+  Owner      = "platform"
+  CostCenter = "shared"
+}
