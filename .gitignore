@@ -7,3 +7,4 @@ terraform.tfstate.*
 generated/
 bin/
 downloads/
+.DS_Store
