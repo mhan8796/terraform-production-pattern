@@ -103,7 +103,7 @@ resource "aws_eks_addon" "main" {
 }
 
 resource "aws_iam_role" "eks_nodes" {
-  count = var.enable_managed_node_group ? 1 : 0
+  count = (var.enable_managed_node_group || var.enable_gpu_node_group) ? 1 : 0
 
   name = "${var.name}-eks-nodes"
 
@@ -120,21 +120,21 @@ resource "aws_iam_role" "eks_nodes" {
 }
 
 resource "aws_iam_role_policy_attachment" "eks_nodes_worker" {
-  count = var.enable_managed_node_group ? 1 : 0
+  count = (var.enable_managed_node_group || var.enable_gpu_node_group) ? 1 : 0
 
   role       = aws_iam_role.eks_nodes[0].name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
 
 resource "aws_iam_role_policy_attachment" "eks_nodes_cni" {
-  count = var.enable_managed_node_group ? 1 : 0
+  count = (var.enable_managed_node_group || var.enable_gpu_node_group) ? 1 : 0
 
   role       = aws_iam_role.eks_nodes[0].name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 
 resource "aws_iam_role_policy_attachment" "eks_nodes_ecr" {
-  count = var.enable_managed_node_group ? 1 : 0
+  count = (var.enable_managed_node_group || var.enable_gpu_node_group) ? 1 : 0
 
   role       = aws_iam_role.eks_nodes[0].name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
@@ -176,5 +176,66 @@ resource "aws_eks_node_group" "default" {
 
   lifecycle {
     ignore_changes = [scaling_config[0].desired_size]
+  }
+}
+
+resource "aws_eks_node_group" "gpu" {
+  count = var.enable_gpu_node_group ? 1 : 0
+
+  cluster_name    = aws_eks_cluster.main.name
+  node_group_name = "${var.name}-gpu"
+  node_role_arn   = aws_iam_role.eks_nodes[0].arn
+  subnet_ids      = var.private_subnet_ids
+
+  ami_type       = var.gpu_node_ami_type
+  instance_types = var.gpu_node_instance_types
+
+  scaling_config {
+    desired_size = var.gpu_node_desired_size
+    max_size     = var.gpu_node_max_size
+    min_size     = var.gpu_node_min_size
+  }
+
+  update_config {
+    max_unavailable = 1
+  }
+
+  labels = {
+    workload = "gpu"
+  }
+
+  taint {
+    key    = "nvidia.com/gpu"
+    value  = "true"
+    effect = "NO_SCHEDULE"
+  }
+
+  depends_on = [
+    aws_eks_addon.main,
+    aws_iam_role_policy_attachment.eks_nodes_cni,
+    aws_iam_role_policy_attachment.eks_nodes_ecr,
+    aws_iam_role_policy_attachment.eks_nodes_worker,
+  ]
+
+  lifecycle {
+    ignore_changes = [scaling_config[0].desired_size]
+  }
+}
+
+# ---------------------------------------------------------------------------
+# OIDC provider for IRSA (IAM Roles for Service Accounts)
+# ---------------------------------------------------------------------------
+
+data "tls_certificate" "eks" {
+  url = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.main.identity[0].oidc[0].issuer
+
+  tags = {
+    Name = "${var.name}-eks-oidc"
   }
 }

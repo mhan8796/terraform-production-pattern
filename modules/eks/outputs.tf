@@ -22,3 +22,18 @@ output "node_group_name" {
   description = "Managed node group name when enabled."
   value       = var.enable_managed_node_group ? aws_eks_node_group.default[0].node_group_name : null
 }
+
+output "oidc_provider_arn" {
+  description = "ARN of the EKS OIDC provider used for IRSA."
+  value       = aws_iam_openid_connect_provider.eks.arn
+}
+
+output "oidc_provider_url" {
+  description = "EKS OIDC provider URL without the https:// prefix."
+  value       = trimprefix(aws_iam_openid_connect_provider.eks.url, "https://")
+}
+
+output "gpu_node_group_name" {
+  description = "GPU node group name when enabled."
+  value       = var.enable_gpu_node_group ? aws_eks_node_group.gpu[0].node_group_name : null
+}

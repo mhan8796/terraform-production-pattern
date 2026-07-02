@@ -101,3 +101,33 @@ variable "node_update_max_unavailable" {
   description = "Maximum unavailable nodes during managed node group updates."
   type        = number
 }
+
+variable "enable_gpu_node_group" {
+  description = "Create a GPU node group with nvidia taint."
+  type        = bool
+}
+
+variable "gpu_node_instance_types" {
+  description = "EC2 instance types for the GPU node group (e.g. g4dn.xlarge)."
+  type        = list(string)
+}
+
+variable "gpu_node_ami_type" {
+  description = "AMI type for the GPU node group."
+  type        = string
+}
+
+variable "gpu_node_min_size" {
+  description = "Minimum node count for the GPU node group."
+  type        = number
+}
+
+variable "gpu_node_desired_size" {
+  description = "Desired node count for the GPU node group."
+  type        = number
+}
+
+variable "gpu_node_max_size" {
+  description = "Maximum node count for the GPU node group."
+  type        = number
+}
